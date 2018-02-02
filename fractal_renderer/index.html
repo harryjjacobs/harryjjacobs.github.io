@@ -1,0 +1,89 @@
+<html>
+	<head>
+		<script type="text/javascript" src="https://threejs.org/build/three.min.js"></script>
+		<script type="text/javascript" src="js/mandelbrot.js"></script>
+	</head>
+	<body style="overflow:hidden;">
+		<p>Use the scroll wheel to zoom in/out and pan with the mouse</p>	
+		<script id="vertexShader" type="x-shader/x-vertex">
+			precision highp float;
+			uniform float zoom;
+			uniform vec2 pan;
+			varying vec2 pos;
+			void main () {
+				pos = position.xy * zoom - pan.xy;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+			}
+		</script>
+
+		<script id="fragmentShader" type="x-shader/x-fragment">
+			precision highp float;
+			varying vec2 pos;
+			uniform float maxIterations;
+
+			void main () {
+				float real  = pos.x;
+				float imag  = pos.y;
+				float Creal = real;  
+				float Cimag = imag;  
+
+				float r2 = 0.0;
+				float iter = 0.0;
+				for (float i = 0.0; i < 128.0; ++i)
+				{
+					float tempreal = real;
+
+					real = (tempreal * tempreal) - (imag * imag) + Creal;
+					imag = 2.0 * tempreal * imag + Cimag;
+					r2   = (real * real) + (imag * imag);
+					if (r2 > 4.0) {
+						break;
+					}
+					++iter;
+				}
+
+				vec3 col;
+
+				if (r2 < 4.0)
+					col = vec3(0.0, 0.0, 0.0);
+				else
+					col = vec3(1.0, 1.0, 1.0);
+
+				if (iter == 20.0) {
+					col = vec3(0, 0, 0);
+				} else if (iter == 0.0) {
+					col = vec3(1, 0, 0);
+				} else {
+					// colour gradient:      Red -> Blue -> Green -> Red -> Black
+					// corresponding values:  0  ->  16  ->  32   -> 64  ->  127 (or -1)
+					if (iter < 16.0) {
+						col = vec3((16.0 * (16.0 - iter)) / 127.0, 0, (16.0 * iter - 1.0) / 127.0);
+					} else if (iter < 32.0) {
+						col = vec3(0, (16.0 * (16.0 - iter)) / 127.0, (16.0 * (32.0 - iter) - 1.0) / 127.0);
+					} else if (iter < 64.0) {
+						col = vec3((8.0 * (iter - 32.0)) / 127.0, (8.0 * (64.0 - iter) - 1.0) / 127.0, 0);
+					} else { // range is 64 - 127
+						col = vec3((255.0 - (iter - 64.0) * 4.0) / 127.0, 0, 0);
+					}
+				}
+
+				gl_FragColor = vec4(col, 1.0);
+
+				/*vec2 fractal = pos;
+				int iter = 0;
+				for (int i = 0; i < 128; i++) {
+					fractal = pos + vec2(
+						fractal.x * fractal.x - fractal.y * fractal.y,
+						2.0 * fractal.x * fractal.y
+					);
+					iter++;
+				}*/
+				//float color = float(i) / 20.0;
+				//gl_FragColor = vec4(fractal, float(iter == 20 ? 0.0 : float(iter)) / 127.0, 1);
+				//vec4 col;
+				//getColour(iter, col);
+				//gl_FragColor = col;
+			}
+		</script>
+	</body>
+</html>
